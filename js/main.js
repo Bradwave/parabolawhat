@@ -58,7 +58,8 @@ class Plotter {
             // Scale context so all drawing commands use CSS pixels
             this.ctx.scale(dpr, dpr);
             
-            this.scale = 40; // Pixels per unit
+            // Mobile Portrait scaling adjustment
+            this.scale = (window.matchMedia("(orientation: portrait) and (max-width: 600px)").matches) ? 30 : 40;
             this.origin = { x: this.width / 2, y: this.height / 2 };
         }
     }
@@ -88,14 +89,55 @@ class Plotter {
         }
         ctx.stroke();
 
-        // Axes
-        ctx.strokeStyle = '#7e22ce'; // Darker purple
-        ctx.lineWidth = 2;
+        // Labels
+        ctx.fillStyle = '#7e22ce';
+        ctx.font = '14px "Space Mono", monospace'; // Bigger (12->14)
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 3;
+        
+        // Dynamic Step based on scale
+        const step = (this.scale < 25) ? 2 : 1;
+
+        // X Axis labels
+        for (let x = this.origin.x % this.scale; x < this.width; x += this.scale) {
+             const worldX = Math.round((x - this.origin.x) / this.scale);
+             if (worldX !== 0 && worldX % step === 0) {
+                 // Halo
+                 ctx.strokeText(worldX, x, this.origin.y + 4);
+                 ctx.fillText(worldX, x, this.origin.y + 4);
+                 // Tick
+                 ctx.beginPath();
+                 ctx.moveTo(x, this.origin.y - 2);
+                 ctx.lineTo(x, this.origin.y + 2);
+                 ctx.stroke();
+             }
+        }
+
+        // Y Axis labels
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let y = this.origin.y % this.scale; y < this.height; y += this.scale) {
+             const worldY = Math.round(-(y - this.origin.y) / this.scale);
+             if (worldY !== 0 && worldY % step === 0) {
+                 // Halo
+                 ctx.strokeText(worldY, this.origin.x - 4, y);
+                 ctx.fillText(worldY, this.origin.x - 4, y);
+                 // Tick
+                 ctx.beginPath();
+                 ctx.moveTo(this.origin.x - 2, y);
+                 ctx.lineTo(this.origin.x + 2, y);
+                 ctx.stroke();
+             }
+        }
+
+        // Axes (Drawn LAST to overlap halos)
+        ctx.strokeStyle = '#a78bfa'; // Lighter purple
+        ctx.lineWidth = 1.5; // Thinner
         ctx.beginPath();
-        // X Axis
         ctx.moveTo(0, this.origin.y);
         ctx.lineTo(this.width, this.origin.y);
-        // Y Axis
         ctx.moveTo(this.origin.x, 0);
         ctx.lineTo(this.origin.x, this.height);
         ctx.stroke();
@@ -140,6 +182,9 @@ class Plotter {
         
         // Recalculate origin
         this.origin = { x: this.width / 2, y: this.height / 2 };
+        
+        // Update scale on resize
+        this.scale = (window.matchMedia("(orientation: portrait) and (max-width: 600px)").matches) ? 30 : 40;
         return true;
     }
 
@@ -238,6 +283,16 @@ class QuizEngine {
         this.updateStatsUI();
         // Close popup if open
         document.getElementById('feedback-popup').classList.add('hidden');
+    }
+    
+    closeFeedback(callback) {
+        const popup = document.getElementById('feedback-popup');
+        popup.classList.add('closing');
+        setTimeout(() => {
+            popup.classList.remove('closing');
+            popup.classList.add('hidden');
+            if (callback) callback();
+        }, 250); // Match CSS animation
     }
 
     startQuiz(mode) {
@@ -410,12 +465,17 @@ class QuizEngine {
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = 'es: x^2 + 2x - 1';
+        input.className = 'equation-input'; // Custom style
         input.style.fontSize = '1.5rem';
         input.style.padding = '1rem';
         input.style.width = '100%';
         input.style.textAlign = 'center';
         input.style.borderRadius = '0.5rem';
         input.style.border = '2px solid var(--border-color)';
+        
+        input.onkeypress = (e) => {
+            if (e.key === 'Enter') this.checkTypeAnswer(input.value, q);
+        };
 
         const submitBtn = document.createElement('button');
         submitBtn.className = 'next-btn';
@@ -460,9 +520,10 @@ class QuizEngine {
             
             if (isCorrect) {
                 element.classList.add('correct-final');
+                this.showPoints(10);
             } else {
                 element.classList.add('wrong-final');
-                // Highlight correct one?
+                // Highlight correct one
                 buttons.forEach(b => {
                     if (b.dataset.eq === correct.equationDisplay) {
                         b.classList.add('correct-final');
@@ -471,7 +532,7 @@ class QuizEngine {
             }
             
             this.showFeedback(isCorrect, isCorrect ? "Corretto!" : "Sbagliato!");
-        }, 1000); // 1.0s total duration (Faster)
+        }, 1000); 
     }
 
     checkTypeAnswer(input, q) {
@@ -497,7 +558,7 @@ class QuizEngine {
                     score += 1;
                     errors.push(`Coefficiente ${name} errato. (Segno corretto)`);
                 } else {
-                    errors.push(`Coefficiente ${name} errato. (Corretto: ${c})`);
+                    errors.push(`Coefficiente ${name} errato.`);
                 }
             }
         };
@@ -509,13 +570,24 @@ class QuizEngine {
         const isPerfect = (score === maxScore);
         
         if (score > 0 && !isPerfect) {
-            this.showPoints(score);
+            if (!this.attemptedCurrentQuestion) this.showPoints(score);
         }
         
         if (isPerfect) {
              this.showFeedback(true, "Perfetto! Equazione corretta.");
-             this.showPoints(score + 1); // Bonus for perfection?
+             if (!this.attemptedCurrentQuestion) this.showPoints(score + 1); // Bonus for perfection?
+             
+             // Disable input to prevent farming
+             const inputEl = document.querySelector('.equation-input');
+             const submitBtn = document.querySelector('.next-btn'); // Assuming class used in setupTypeEqMode
+             if (inputEl) {
+                 inputEl.disabled = true;
+                 // Remove enter listener too? usually disabled input prevents typing
+             }
+             if (submitBtn) submitBtn.disabled = true;
         } else {
+             // Mark as attempted so no more points
+             this.attemptedCurrentQuestion = true;
             // Show errors but allow retry
             // Also partial success message if score > 0?
             // User: "write in the feedback what's wrong"
@@ -540,8 +612,10 @@ class QuizEngine {
 
     resetInteraction() {
         this.plotter.clear();
+        this.attemptedCurrentQuestion = false; // Reset attempt flag
         document.getElementById('html-options').classList.add('hidden');
         document.getElementById('html-options').innerHTML = '';
+        document.getElementById('html-options').style.gridTemplateColumns = ''; // Reset layout
         
         
         // Hide popup
@@ -686,14 +760,15 @@ class QuizEngine {
                  // Retry symbol for draw (instead of bin)
                  retryBtn.innerHTML = '<span class="material-symbols-rounded">refresh</span>';
                  retryBtn.onclick = () => {
-                    popup.classList.add('hidden');
-                    this.plotter.clear(); 
+                    this.closeFeedback(() => {
+                        this.plotter.clear(); 
+                    });
                 };
             } else {
                 // Refresh symbol for type-eq (try again, keep input)
                 retryBtn.innerHTML = '<span class="material-symbols-rounded">refresh</span>';
                 retryBtn.onclick = () => {
-                    popup.classList.add('hidden');
+                    this.closeFeedback();
                     // Input remains
                 };
             }
@@ -734,7 +809,7 @@ class QuizEngine {
         
         // "Next Question" logic
         document.getElementById('next-question-btn').onclick = () => {
-             popup.classList.add('hidden');
+             this.closeFeedback(() => {
              if (isCorrect) {
                 this.streak++;
                 this.loadQuestion();
@@ -742,6 +817,7 @@ class QuizEngine {
                 this.streak = 0;
                 this.loadQuestion(); 
             }
+            });
         };
     }
 }
@@ -870,7 +946,13 @@ class DrawingHandler {
         this.mousePos = pos;
         this.brushPos = { ...pos }; // Snap brush to start
         
+        
         this.points.push(this.plotter.screenToWorld(pos.x, pos.y));
+        
+        this.plotter.ctx.strokeStyle = '#7e22ce'; // Purple 700 (Lighter than 900)
+        this.plotter.ctx.lineWidth = 3;
+        this.plotter.ctx.lineCap = 'round';
+        this.plotter.ctx.lineJoin = 'round';
         
         this.plotter.ctx.beginPath();
         this.plotter.ctx.moveTo(this.brushPos.x, this.brushPos.y);

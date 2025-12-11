@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
 :root {
     --bg-color: #faf5ff;       /* Purple 50 */
     --card-bg: #ffffff;
-    --text-primary: #3b0764;   /* Purple 950 */
+    --text-primary: #4c1d95;   /* Purple 900 (Lighter than 950) */
     --text-secondary: #7e22ce; /* Purple 700 */
     --accent-color: #7c3aed;   /* Violet 600 */
     --accent-hover: #6d28d9;   /* Violet 700 */
@@ -14,15 +16,22 @@
     --shadow-md: 0 4px 6px -1px rgba(124, 58, 237, 0.1), 0 2px 4px -1px rgba(124, 58, 237, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(124, 58, 237, 0.15), 0 4px 6px -2px rgba(124, 58, 237, 0.1);
     
-    --font-family: 'Inter', system-ui, sans-serif;
+    --font-family: 'Space Mono', monospace;
 }
 
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box; 
+    font-family: var(--font-family);
+}
+
+::selection {
+    background: var(--accent-color);
+    color: var(--accent-light);
+}
 
 body {
     margin: 0;
     padding: 0.5rem;
-    font-family: var(--font-family);
     background-color: var(--bg-color);
     color: var(--text-primary);
     min-height: 100vh;
@@ -141,7 +150,7 @@ h1 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.5rem;
     position: relative;
     overflow: hidden;
 }
@@ -197,8 +206,25 @@ h1 {
     filter: brightness(1.1);
 }
 
-.mode-card.special h3 {
-    font-size: 1.25rem;
+.mode-card.special .special-text-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centered in portrait */
+    text-align: center;
+}
+
+@media (orientation: landscape) {
+    .mode-card.special .special-text-group {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 0.75rem;
+    }
+    .mode-card.special p {
+        /* Adjust for baseline alignment */
+        font-size: 0.9rem;
+        opacity: 0.9;
+        font-weight: 500;
+    }
 }
 
 .footer-actions {
@@ -354,7 +380,7 @@ canvas {
 }
 
 canvas.small-height {
-    max-height: 250px;
+    max-height: 300px; /* Increased from 250px */
     object-fit: contain;
 }
 
@@ -590,7 +616,7 @@ canvas.small-height {
 .feedback-details-list {
     margin: 0.5rem 0 0 1rem;
     padding: 0;
-    font-size: 0.9rem;
+    font-size: 0.75rem;
     font-weight: 500;
     list-style-type: disc;
     color: var(--text-primary);
@@ -600,8 +626,14 @@ canvas.small-height {
 }
 
 /* Only Purple Tones */
-.feedback-message.success { color: var(--accent-color); }
-.feedback-message.error { color: var(--text-primary); }
+.feedback-message.success {
+    color: var(--accent-color);
+    font-size: 0.9rem;
+}
+.feedback-message.error {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
 
 .popup-actions {
     display: flex;
@@ -642,9 +674,9 @@ canvas.small-height {
 }
 
 .retry-btn:hover {
-    border-color: #ef4444; /* Red for delete/retry */
-    color: #ef4444;
-    background: #fef2f2;
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background: var(--accent-subtle);
 }
 
 @media (orientation: portrait) and (max-height: 900px) {
@@ -687,4 +719,68 @@ canvas.small-height {
     .mode-grid { grid-template-columns: 1fr; }
     .options-grid { grid-template-columns: 1fr; }
     canvas { height: auto; }
+}
+
+/* Modern Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+code {
+    font-family: 'Space Mono', monospace;
+    color: var(--accent-color);
+    font-weight: 700;
+    /* Removed background/padding globally, will re-apply for question text only if needed? 
+       No, user said "options... go back... simple text". 
+       But "color the equation in the text purple" (previous request) -> I did that.
+       User says "equation in the options... simple text".
+    */
+    background: transparent;
+    padding: 0;
+}
+
+.question-text code {
+    background: var(--accent-subtle);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+    margin-top: 0.75rem; /* Space between question and equation */
+}
+
+/* Animations */
+@keyframes slideDownPopup {
+    from { opacity: 1; transform: translate(-50%, 0); }
+    to { opacity: 0; transform: translate(-50%, 20px); }
+}
+
+.feedback-popup.closing {
+    animation: slideDownPopup 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Input Styles */
+.equation-input {
+    color: #a78bfa !important;
+    border-color: var(--accent-color) !important;
+    caret-color: #a78bfa;
+}
+.equation-input::placeholder {
+    color: #a78bfa;
+    opacity: 0.6;
+}
+
+.equation-input:focus {
+    outline: none;
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 0 0 4px var(--accent-light);
 }
