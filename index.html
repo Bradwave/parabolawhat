@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParabolaWhat?</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+    <!-- Note: Might replace Chart.js with custom canvas code for "drawing" interaction, 
+         but useful for quick plotting if needed. standardizing on raw canvas for custom interactive stuff though. -->
+</head>
+<body>
+
+    <!-- Background removed -->
+
+    <div class="app-container">
+        <header>
+            <h1>Parabola<span class="highlight">What?</span></h1>
+            <p class="subtitle">Esplora. Disegna. Indovina.</p>
+        </header>
+
+        <!-- Menu View -->
+        <div id="menu-view" class="view active">
+            <div class="stats-overview">
+                <div class="score-pill">
+                    <span class="label">Punteggio Totale</span>
+                    <span class="value" id="total-score">0</span>
+                </div>
+                <div class="score-pill">
+                    <span class="label">Accuratezza</span>
+                    <span class="value" id="accuracy">0%</span>
+                </div>
+            </div>
+
+            <div class="mode-grid">
+                <button class="mode-card" data-mode="draw-plot">
+                    <span class="material-symbols-rounded icon">draw</span>
+                    <h3>Disegna il grafico</h3>
+                    <p>Dall'equazione al grafico</p>
+                </button>
+                <button class="mode-card" data-mode="pick-plot">
+                    <span class="material-symbols-rounded icon">image_search</span>
+                    <h3>Trova il grafico</h3>
+                    <p>Scegli il grafico corretto</p>
+                </button>
+                <button class="mode-card" data-mode="pick-eq">
+                    <span class="material-symbols-rounded icon">function</span>
+                    <h3>Trova l'equazione</h3>
+                    <p>Dal grafico all'equazione</p>
+                </button>
+                <button class="mode-card" data-mode="type-eq">
+                    <span class="material-symbols-rounded icon">keyboard</span>
+                    <h3>Scrivi l'equazione</h3>
+                    <p>Dal grafico alla formula</p>
+                </button>
+
+                <button class="mode-card full-width special" data-mode="random">
+                    <span class="material-symbols-rounded icon">shuffle</span>
+                    <h3>Modalità casuale</h3>
+                    <p>Mettiti alla prova su tutto</p>
+                </button>
+            </div>
+
+            <div class="footer-actions">
+                <button id="reset-stats-btn" class="text-btn">Resetta statistiche</button>
+            </div>
+        </div>
+
+        <!-- Quiz View -->
+        <div id="quiz-view" class="view">
+            <div class="quiz-header">
+                <button class="back-btn" id="exit-quiz-btn">
+                    <span class="material-symbols-rounded">arrow_back</span> Menu
+                </button>
+                <div id="points-animation" class="points-animation"></div>
+                <div class="progress-indicator">
+                    <span id="quiz-mode-label">Mode</span>
+                    <span class="streak-badge" id="streak-badge">
+                        <span class="material-symbols-rounded" style="font-size: 1.1em; vertical-align: bottom;">local_fire_department</span> 
+                        <span id="streak-val">0</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="quiz-content" id="quiz-container">
+                <!-- Dynamic Content Injected Here -->
+                <div class="question-text" id="question-text">...</div>
+                
+                <div class="interaction-area" id="interaction-area">
+                    <canvas id="main-canvas" width="600" height="400"></canvas>
+                    <div id="html-options" class="options-grid hidden"></div>
+                </div>
+
+                <!-- Feedback Area Removed (Using Popup) -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- End App Container -->
+    </div>
+
+    <!-- Feedback Popup -->
+    <div id="feedback-popup" class="feedback-popup hidden">
+        <div class="popup-content">
+            <div id="feedback-message" class="feedback-message"></div>
+            <div class="popup-actions">
+                <button id="retry-btn" class="retry-btn hidden" title="Riprova">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+                <button id="next-question-btn" class="next-btn">Prossima &rarr;</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
