@@ -680,8 +680,8 @@ canvas.small-height {
 }
 
 @media (orientation: portrait) and (max-height: 900px) {
-    #main-canvas {
-        min-height: 350px; /* Taller on mobile portrait */
+    #main-canvas:not(.small-height) {
+        min-height: 400px; /* Taller on mobile portrait for drawing */
     }
 }
 

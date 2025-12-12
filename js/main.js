@@ -184,7 +184,7 @@ class Plotter {
         this.origin = { x: this.width / 2, y: this.height / 2 };
         
         // Update scale on resize
-        this.scale = (window.matchMedia("(orientation: portrait) and (max-width: 600px)").matches) ? 30 : 40;
+        this.scale = (window.matchMedia("(orientation: portrait) and (max-width: 600px)").matches) ? 24 : 40;
         return true;
     }
 
@@ -222,12 +222,28 @@ class QuizEngine {
     constructor() {
         this.currentMode = null;
         this.score = 0;
-        this.streak = 0;
+        
         this.stats = JSON.parse(localStorage.getItem('parabola_stats')) || {
             totalScore: 0,
             attempts: 0,
-            correct: 0
+            correct: 0,
+            streaks: {}
         };
+        // Migration for existing data
+        if (!this.stats.streaks) this.stats.streaks = {};
+
+        // Heat/Streak accessor per mode
+        Object.defineProperty(this, 'streak', {
+            get: () => {
+                if (!this.currentMode) return 0;
+                return this.stats.streaks[this.currentMode] || 0;
+            },
+            set: (val) => {
+                if (!this.currentMode) return;
+                this.stats.streaks[this.currentMode] = val;
+                this.saveStats();
+            }
+        });
         
         this.ui = {
             menu: document.getElementById('menu-view'),
@@ -254,7 +270,7 @@ class QuizEngine {
 
         document.getElementById('reset-stats-btn').addEventListener('click', () => {
             if(confirm('Sei sicuro di voler resettare le statistiche?')) {
-                this.stats = { totalScore: 0, attempts: 0, correct: 0 };
+                this.stats = { totalScore: 0, attempts: 0, correct: 0, streaks: {} };
                 this.saveStats();
                 this.updateStatsUI();
             }
@@ -322,6 +338,7 @@ class QuizEngine {
 
     loadQuestion() {
         this.resetInteraction();
+        this.updateStatsUI();
         this.currentQuestion = QuestionGenerator.generate(this.currentMode);
         
         switch(this.currentMode) {
@@ -424,7 +441,9 @@ class QuizEngine {
         mainCanvas.style.display = 'block';
         mainCanvas.classList.add('small-height');
         
-        this.plotter.drawParabola(q.a, q.b, q.c, '#7c3aed', 5); // Thicker line (5)
+        this.plotter.resize();
+        this.plotter.clear();
+        this.plotter.drawParabola(q.a, q.b, q.c, '#7c3aed', 4); // Thinner line (4)
         
         const optionsDiv = document.getElementById('html-options');
         optionsDiv.classList.remove('hidden');
@@ -456,7 +475,9 @@ class QuizEngine {
         mainCanvas.style.display = 'block';
         mainCanvas.classList.add('small-height');
         
-        this.plotter.drawParabola(q.a, q.b, q.c, '#7c3aed', 5); // Thicker line (5)
+        this.plotter.resize();
+        this.plotter.clear();
+        this.plotter.drawParabola(q.a, q.b, q.c, '#7c3aed', 4); // Thinner line (4)
         
         const optionsDiv = document.getElementById('html-options');
         optionsDiv.classList.remove('hidden');
@@ -707,6 +728,20 @@ class QuizEngine {
     }
 
     showFeedback(isCorrect, messageOrErrors) {
+        // Update streak immediately
+        if (isCorrect) {
+            this.streak++;
+        } else {
+            this.streak = 0;
+        }
+        
+        // Update accuracy stats
+        this.stats.attempts++;
+        if (isCorrect) this.stats.correct++;
+        this.saveStats();
+        
+        this.updateStatsUI();
+
         const popup = document.getElementById('feedback-popup');
         const msgEl = document.getElementById('feedback-message');
         const retryBtn = document.getElementById('retry-btn');
@@ -810,14 +845,8 @@ class QuizEngine {
         // "Next Question" logic
         document.getElementById('next-question-btn').onclick = () => {
              this.closeFeedback(() => {
-             if (isCorrect) {
-                this.streak++;
-                this.loadQuestion();
-            } else {
-                this.streak = 0;
-                this.loadQuestion(); 
-            }
-            });
+                 this.loadQuestion();
+             });
         };
     }
 }
