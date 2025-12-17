@@ -552,7 +552,7 @@ class QuizEngine {
                 });
             }
             
-            this.showFeedback(isCorrect, isCorrect ? "Corretto!" : "Sbagliato!");
+            this.showFeedback(isCorrect, isCorrect ? (Math.random() < 0.5 ? "Corretto! ฅ^•ﻌ•^ฅ" : "Corretto! ദ്ദി（• ˕ •マ.ᐟ") : (Math.random() < 0.5 ? "Sbagliato! /ᐠ ╥ ˕ ╥マ" : "Sbagliato! (·•᷄ ˕  •᷅マ"));
         }, 1000); 
     }
 
